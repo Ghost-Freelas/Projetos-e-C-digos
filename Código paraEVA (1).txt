@@ -1,0 +1,99 @@
+nome = input('  Digite o seu nick ou como gostaria de ser chamado: ')
+
+import speech_recognition as sr
+import pyttsx3 
+import datetime
+import webbrowser
+import pywhatkit
+
+#Inicializa o mecanismo de texto para fala
+engine = pyttsx3.init()
+engine.setProperty('rate',195)#Velocidade da fala
+engine.say("Iniciando a sua EVA.")
+engine.runAndWait()
+
+def falar(texto):
+    engine.say(texto)
+    engine.runAndWait()
+
+def saudacao():
+    hora = datetime.datetime.now().hour
+
+    if 6 <= hora < 12:
+        falar("Bom dia {} !".format(nome))
+    elif 12 <= hora < 18:
+        falar("Boa tarde {} !".format(nome))
+    else:
+        falar("Boa noite {} !".format(nome))
+
+def ouvir_comando():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Ouvindo...")
+        recognizer.adjust_for_ambient_noise(source)
+        audio = recognizer.listen(source)
+
+        try:
+            comando = recognizer.recognize_google(audio,language="pt-BR")
+            print(f"Você disse: {comando}")
+            return comando.lower()
+        except sr.UnknownValueError:
+            falar('Desculpe, não entendi')
+        except sr.RequestError:
+            falar("Error ao conectar com o serviço de reconhecimento")
+            return""
+
+def executar_comando(comando):
+        #Comandos
+        if 'que horas são' in comando:
+            agora = datetime.datetime.now().strftime("%H:%M")
+            falar(f"Agora são {agora}")
+        elif "bom dia" in comando or "boa tarde" in comando or "boa noite" in comando:
+            saudacao()
+        elif 'pesquise por' in comando:
+            termo = comando.lower().split("pesquise por",1)[-1].strip()
+            if termo:
+                termo_url = "+".join(termo.split())
+                url = f"https://www.google.com/search?q={termo_url}"
+                falar(f"Pesquisando por '{termo}' no Google.")
+                webbrowser.open(url)
+            else:
+                falar("Você não falou nada para eu pesquisar.")
+        elif 'abrir youtube' in comando:
+            falar("Abrindo youtube para {}".format(nome))
+            webbrowser.open('https://www.youtube.com')
+        elif 'tocar' in comando:
+            musica = comando.replace('tocar',"").strip()
+            if musica:
+                falar(f"Tocando {musica} no youtube")
+                pywhatkit.playonyt(musica)
+            webbrowser.open('https://www.youtube.com')        
+        elif 'abrir google' in comando:
+            falar("Abrindo google para {}".format(nome))
+            webbrowser.open('https://www.google.com')
+        elif 'abrir discord' in comando:
+            falar("Abrindo discord para {}".format(nome))
+            webbrowser.open('https://www.discord.com')
+        elif 'abrir deezer' in comando:
+            falar("Abrindo deezer para {}".format(nome))
+            webbrowser.open('https://www.deezer.com')
+        elif 'abrir spotify' in comando:
+            falar("Abrindo spotify para {}".format(nome))
+        #Comprimentos
+        elif 'obrigado' in comando or 'agradeço' in comando:
+            falar("De nada {}, qualquer coisa estarei aqui para ajudar.".format(nome))
+        elif 'tudo bem' in comando or 'como está' in comando:
+            falar("Está tudo bem comigo. Espero que esteja tudo bem com você também.")
+        elif 'sair' in comando or 'adeus' in comando or 'até logo' in comando or 'até mais' in comando or 'desligar' in comando:
+            falar("Até mais {}, obrigado pela conversa!".format(nome))
+            exit()
+        #Erro na fala/pronúncia
+        else:
+            falar("Comando não reconhecido. Tente Novamente.")
+#Loop principal
+falar('Olá {}, eu sou a Eva. Como posso ajudar ?'.format(nome))
+while True:
+    comando_usuario = ouvir_comando()
+
+    if comando_usuario:
+        executar_comando(comando_usuario)
